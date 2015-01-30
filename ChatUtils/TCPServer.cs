@@ -7,14 +7,15 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 
-namespace ChatServer
+namespace ChatUtils
 {
-    class TCPServer
+    public class TCPServer
     {
         private TcpListener tcpListener;
+        public bool loop = true;
         private Thread listenThread;
         private ChatUtils.Console console;
-        
+  
         public TCPServer(ChatUtils.Console console)
         {
             this.console = console;
@@ -26,16 +27,26 @@ namespace ChatServer
         private void ListenForClients()
         {
             this.tcpListener.Start();
-
-            while(true)
+            Thread clientThread;
+            while(loop)
             {
                 //Waits for a client
                 TcpClient client = this.tcpListener.AcceptTcpClient();
               
                 //creating a thread for coms with client
-                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
+                clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
                 clientThread.Start(client);
             }
+            tcpListener.Stop();
+        }
+
+        public void sendMessage(NetworkStream clientStream, string message)
+        {
+            ASCIIEncoding encoder1 = new ASCIIEncoding();
+            byte[] buffer = encoder1.GetBytes(message);
+
+            clientStream.Write(buffer, 0, buffer.Length);
+            clientStream.Flush();
         }
 
         private void HandleClientComm(object client)
@@ -48,13 +59,11 @@ namespace ChatServer
 
             string IP = ((Socket)clientStream.GetType().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(clientStream, null)).RemoteEndPoint.ToString();
 
-            ASCIIEncoding encoder1 = new ASCIIEncoding();
-            byte[] buffer = encoder1.GetBytes("/Connected");
+            sendMessage(clientStream, "/Connected");
 
-            clientStream.Write(buffer, 0, buffer.Length);
-            clientStream.Flush();
+            CommandHandler cmdHandler = new CommandHandler(console, this, clientStream);
 
-            while (true)
+            while (loop)
             {
                 bytesRead = 0;
 
@@ -66,12 +75,13 @@ namespace ChatServer
                 catch(Exception e)
                 {
                     //error occured
-
+                    console.writeLine(e.ToString());
                 }
 
                 if (bytesRead == 0)
                 {
                     //client has left server
+                    console.writeLine(IP + " Has left the server");
                     break;
                 }
 
@@ -80,7 +90,7 @@ namespace ChatServer
                 string msg = encoder.GetString(message, 0, bytesRead);
                 if (msg.Contains("/"))
                 {
-                    ChatUtils.CommandHandler cmdHandler = new ChatUtils.CommandHandler(msg, console);
+                    cmdHandler.cmd(msg);
                 }
                 else
                 {
@@ -90,6 +100,7 @@ namespace ChatServer
 
             //close client
             tcpClient.Close();
+            clientStream.Close();    
         }
     }
 }

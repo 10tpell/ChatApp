@@ -60,7 +60,7 @@ namespace ChatClient
             catch (Exception e)
             {
                 //error occured
-
+                console.writeLine(e.ToString());
             }
 
             if (bytesRead == 0)
@@ -71,7 +71,16 @@ namespace ChatClient
 
             //message has been recieved
             ASCIIEncoding encoder = new ASCIIEncoding();
-            console.writeLine(encoder.GetString(message, 0, bytesRead));
+            string msg = encoder.GetString(message, 0, bytesRead);
+            console.writeLine("DEBUG: Server Sent: " + msg);
+
+            if (msg.TrimStart('/').ToUpper() == "QUIT")
+            {
+                console.writeLine("Server Disconnected, Quiting...");
+                client.Close();
+                this.clientStream.Close();
+                timer.Stop();
+            }
 
         }
         
