@@ -77,7 +77,15 @@ namespace ChatServer
 
                 //message has been recieved
                 ASCIIEncoding encoder = new ASCIIEncoding();
-                console.writeLine(IP + ": " + encoder.GetString(message, 0, bytesRead));
+                string msg = encoder.GetString(message, 0, bytesRead);
+                if (msg.Contains("/"))
+                {
+                    ChatUtils.CommandHandler cmdHandler = new ChatUtils.CommandHandler(msg, console);
+                }
+                else
+                {
+                    console.writeLine(IP + ": " + encoder.GetString(message, 0, bytesRead));
+                }
             }
 
             //close client
