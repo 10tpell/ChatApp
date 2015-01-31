@@ -21,15 +21,23 @@ namespace ChatClient
  
         public TCPClient(string p1, int p2, ChatUtils.Console console)
         {
-            client = new TcpClient();
-            serverEndPoint = new IPEndPoint(IPAddress.Parse(p1), p2);
-            client.Connect(serverEndPoint);
-            clientStream = client.GetStream();
-            timer = new System.Timers.Timer();
-            timer.Interval = 100;
-            timer.Elapsed += new ElapsedEventHandler(timerElapsed);
-            timer.Start();
-            this.console = console;
+            try
+            {
+                client = new TcpClient();
+                serverEndPoint = new IPEndPoint(IPAddress.Parse(p1), p2);
+                client.Connect(serverEndPoint);
+                clientStream = client.GetStream();
+                timer = new System.Timers.Timer();
+                timer.Interval = 100;
+                timer.Elapsed += new ElapsedEventHandler(timerElapsed);
+                timer.Start();
+                this.console = console;
+            }
+            catch(Exception e)
+            {
+                this.console = console;
+                console.writeLine(e.ToString());
+            }
         }
 
         private void timerElapsed(object sender, EventArgs e)
@@ -70,9 +78,25 @@ namespace ChatClient
             //message has been recieved
             ASCIIEncoding encoder = new ASCIIEncoding();
             string msg = encoder.GetString(message, 0, bytesRead);
-            console.writeLine("DEBUG: Server Sent: " + msg);
+            //console.writeLine("DEBUG: Server Sent: " + msg);
+            if (msg.Contains('/') != true)
+            {
+                if (msg.Contains(LocalIPAddress()))
+                {
+                    for (int i = 0; i < LocalIPAddress().Length; i++)
+                    {
+                        msg = msg.TrimStart(LocalIPAddress()[i]);
+                    }
+                    msg = msg.Remove(0, 6);
+                    console.writeLine("You: " + msg);
+                } 
+                else
+                {
+                    console.writeLine(msg);
+                }
 
-            if (msg.TrimStart('/').ToUpper() == "QUIT")
+            }
+            else if (msg.TrimStart('/').ToUpper() == "QUIT")
             {
                 console.writeLine("Server Disconnected, Quiting...");
                 client.Close();
@@ -81,6 +105,22 @@ namespace ChatClient
             }
 
         }
-        
+
+        public string LocalIPAddress()
+        {
+            IPHostEntry host;
+            string localIP = "";
+            host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    localIP = ip.ToString();
+                    break;
+                }
+            }
+            return localIP;
+        }
+
     }
 }

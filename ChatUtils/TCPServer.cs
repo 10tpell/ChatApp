@@ -17,15 +17,22 @@ namespace ChatUtils
         private Thread listenThread;
         private ChatUtils.Console console;
         private CommandHandler cmdHandler;
-        private List<NetworkStream> allConnections;
+        public List<NetworkStream> allConnections;
   
         public TCPServer(ChatUtils.Console console)
         {
             this.console = console;
-            this.tcpListener = new TcpListener(IPAddress.Any, 3000);
-            this.listenThread = new Thread(new ThreadStart(ListenForClients));
-            this.listenThread.Start();
-            allConnections = new List<NetworkStream>();
+            try
+            {
+                this.tcpListener = new TcpListener(IPAddress.Any, 3000);
+                this.listenThread = new Thread(new ThreadStart(ListenForClients));
+                this.listenThread.Start();
+                allConnections = new List<NetworkStream>();
+            }
+            catch(Exception e)
+            {
+                console.writeLine(e.ToString());
+            }
         }
 
         private void ListenForClients()

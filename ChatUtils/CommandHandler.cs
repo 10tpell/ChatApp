@@ -30,7 +30,15 @@ namespace ChatUtils
         public void cmd(string command)
         {
             string cmd = command.TrimStart('/');
-            console.writeLine("User used:" + cmd + " Command");
+            try
+            {
+                console.writeLine("User used:" + cmd + " Command");
+            }
+            catch
+            {
+
+            }
+
             if (cmd.ToUpper() == "STOP")
             {
                 server.broadcastMessage("/Quit");

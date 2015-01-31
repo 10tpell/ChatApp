@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Net.Sockets;
 
 using ChatUtils;
 
@@ -56,7 +57,21 @@ namespace ChatServer
             {
                 // code for debugging console.writeLine(ex.ToString());
             }
-            
+            //populates listbox with ip addresses of connected clients
+            try
+            {
+                for (int i = 0; i < server.allConnections.Count; i++)
+                {
+                    if (listBox1.Items.Contains(((Socket)server.allConnections[i].GetType().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(server.allConnections[i], null)).RemoteEndPoint.ToString()) != true)
+                    {
+                        listBox1.Items.Add(((Socket)server.allConnections[i].GetType().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(server.allConnections[i], null)).RemoteEndPoint.ToString());
+                    }
+                }
+            }
+            catch
+            {
+
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
