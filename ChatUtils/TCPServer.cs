@@ -13,8 +13,11 @@ namespace ChatUtils
     {
         private TcpListener tcpListener;
         public bool loop = true;
+        public bool on = true;
         private Thread listenThread;
         private ChatUtils.Console console;
+        private CommandHandler cmdHandler;
+        private List<NetworkStream> allConnections;
   
         public TCPServer(ChatUtils.Console console)
         {
@@ -22,19 +25,19 @@ namespace ChatUtils
             this.tcpListener = new TcpListener(IPAddress.Any, 3000);
             this.listenThread = new Thread(new ThreadStart(ListenForClients));
             this.listenThread.Start();
+            allConnections = new List<NetworkStream>();
         }
 
         private void ListenForClients()
         {
             this.tcpListener.Start();
-            Thread clientThread;
             while(loop)
             {
                 //Waits for a client
                 TcpClient client = this.tcpListener.AcceptTcpClient();
               
                 //creating a thread for coms with client
-                clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
+                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
                 clientThread.Start(client);
             }
             tcpListener.Stop();
@@ -49,10 +52,28 @@ namespace ChatUtils
             clientStream.Flush();
         }
 
+        public CommandHandler getCmdHandler()
+        {
+            return cmdHandler;
+        }
+
+        public void broadcastMessage(string message)
+        {
+            ASCIIEncoding encoder1 = new ASCIIEncoding();
+            byte[] buffer = encoder1.GetBytes(message);
+
+            for (int i = 0; i < allConnections.Count; i++)
+            {
+                allConnections[i].Write(buffer, 0, buffer.Length);
+                allConnections[i].Flush();
+            }
+        }
+
         private void HandleClientComm(object client)
         {
             TcpClient tcpClient = (TcpClient)client;
             NetworkStream clientStream = tcpClient.GetStream();
+            allConnections.Add(clientStream);
 
             byte[] message = new byte[4096];
             int bytesRead;
@@ -61,7 +82,7 @@ namespace ChatUtils
 
             sendMessage(clientStream, "/Connected");
 
-            CommandHandler cmdHandler = new CommandHandler(console, this, clientStream);
+            cmdHandler = new CommandHandler(console, this, clientStream);
 
             while (loop)
             {
@@ -95,6 +116,7 @@ namespace ChatUtils
                 else
                 {
                     console.writeLine(IP + ": " + encoder.GetString(message, 0, bytesRead));
+                    broadcastMessage(IP + ": " + msg);
                 }
             }
 

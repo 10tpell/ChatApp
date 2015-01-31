@@ -17,6 +17,7 @@ namespace ChatClient
         NetworkStream clientStream;
         private ChatUtils.Console console;
         System.Timers.Timer timer;
+        public bool on = true;
  
         public TCPClient(string p1, int p2, ChatUtils.Console console)
         {
@@ -62,13 +63,10 @@ namespace ChatClient
                 //error occured
                 console.writeLine(e.ToString());
             }
-
             if (bytesRead == 0)
             {
-                //client has left server
                 return;
             }
-
             //message has been recieved
             ASCIIEncoding encoder = new ASCIIEncoding();
             string msg = encoder.GetString(message, 0, bytesRead);

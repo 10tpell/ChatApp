@@ -12,10 +12,17 @@ namespace ChatUtils
         Console console;
         TCPServer server;
         private NetworkStream clientStream;
+        public bool on = true; //for closing the app
 
         public CommandHandler(Console con, TCPServer server, NetworkStream clientStream)
         {
             this.clientStream = clientStream;
+            this.console = con;
+            this.server = server;
+        }
+
+        public CommandHandler(Console con, TCPServer server)
+        {
             this.console = con;
             this.server = server;
         }
@@ -26,8 +33,9 @@ namespace ChatUtils
             console.writeLine("User used:" + cmd + " Command");
             if (cmd.ToUpper() == "STOP")
             {
-                server.sendMessage(clientStream, "/Quit");
+                server.broadcastMessage("/Quit");
                 server.loop = false;
+                on = false;
             }
         }
     }
